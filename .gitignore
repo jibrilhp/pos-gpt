@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+*.manifest
+*.spec
+
+# Virtual Environment
+venv/
+.env/
+.envrc
+.env.local
+.venv/
+
+# Database
+*.db
+*.sqlite3
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Logs
+*.log
+logs/
+
+# Static files
+/static/
+
+# Cache
+.cache/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# FastAPI-specific
+*.sqlite
+*.sqlite-journal
+
+# Environment variables
+.env
+.env.local
+.env.dev
+.env.prod
+.env.test
+
+# JWT Secret Key
+*.key
+*.pem
