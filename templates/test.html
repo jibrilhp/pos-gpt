@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        #mainPosScreen {
+            display: block;
+            min-height: 100vh;
+        }
+        
+        #paymentScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: white;
+            z-index: 1000;
+            display: none;
+            overflow-y: auto;
+        }
+        
+        .payment-method {
+            cursor: pointer;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        
+        .payment-method:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .selected-method {
+            background-color: #e9ecef;
+            border-color: #6B4E71;
+        }
+
+        .payment-keypad button {
+            height: 60px;
+            font-size: 1.2rem;
+        }
+
+        .bottom-payment {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 300px;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Main POS Screen -->
+    <div id="mainPosScreen">
+        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #6B4E71;">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Odoo</a>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-light me-2">Cash In/Out</button>
+                    <button class="btn btn-outline-light position-relative">
+                        Orders
+                        <span id="orderCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">0</span>
+                    </button>
+                    <div class="ms-3 text-white">Mitchell Admin</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Left Panel -->
+                <div class="col-md-7 p-3">
+                    <div id="cartItems">
+                        <!-- Cart items will be dynamically added here -->
+                    </div>
+                </div>
+
+                <!-- Right Panel -->
+                <div class="col-md-5 bg-light p-3">
+                    <div class="input-group mb-3">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search Products...">
+                        <button class="btn btn-outline-secondary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div id="productGrid" class="row g-3">
+                        <!-- Products will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-payment">
+            <h4>Total: $ <span id="totalAmount">0.00</span></h4>
+            <p class="text-muted">Taxes: $ <span id="taxAmount">0.00</span></p>
+            <button class="btn btn-success w-100" onclick="processPayment()">Payment</button>
+        </div>
+    </div>
+
+    <!-- Payment Screen -->
+    <div id="paymentScreen">
+        <nav class="navbar navbar-light bg-light border-bottom">
+            <div class="container-fluid">
+                <button class="btn btn-link text-decoration-none" onclick="hidePaymentScreen()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h5 class="mb-0">Payment</h5>
+                <div class="d-flex align-items-center">
+                    <span class="me-2">Mitchell Admin</span>
+                    <i class="fas fa-wifi"></i>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Left Side - Payment Methods -->
+                <div class="col-md-3 border-end p-3">
+                    <h6>Payment method</h6>
+                    <div class="payment-method" onclick="selectPaymentMethod('cash')">
+                        <i class="fas fa-money-bill me-2"></i> Cash
+                    </div>
+                    <div class="payment-method" onclick="selectPaymentMethod('bank')">
+                        <i class="fas fa-university me-2"></i> Bank
+                    </div>
+                    <div class="payment-method" onclick="selectPaymentMethod('customer')">
+                        <i class="fas fa-user me-2"></i> Customer Account
+                    </div>
+                    
+                    <h6 class="mt-4">Summary</h6>
+                    <div id="paymentSummary"></div>
+                </div>
+
+                <!-- Middle - Keypad -->
+                <div class="col-md-6 p-3">
+                    <div class="text-end mb-4">
+                        <h5>Remaining $ <span id="remainingAmount">0.00</span></h5>
+                        <h5>Change $ <span id="changeAmount">0.00</span></h5>
+                        <p class="text-muted">Total Due $ <span id="totalDueAmount">0.00</span></p>
+                    </div>
+
+                    <div class="payment-keypad">
+                        <div class="row g-2">
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">1</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">2</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">3</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">+10</button></div>
+                            
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">4</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">5</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">6</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">+20</button></div>
+                            
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">7</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">8</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">9</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">+50</button></div>
+                            
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">+/-</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">0</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100">.</button></div>
+                            <div class="col-3"><button class="btn btn-outline-secondary w-100"><i class="fas fa-backspace"></i></button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side - Customer Info -->
+                <div class="col-md-3 text-white p-3" style="background-color: #6B4E71;">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-user-circle fa-2x me-2"></i>
+                        <span>Addison Olson</span>
+                    </div>
+                    <button class="btn btn-outline-light w-100 mb-2">
+                        <i class="fas fa-file-invoice me-2"></i> Invoice
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="position-fixed bottom-0 start-0 w-100 p-3 bg-light border-top">
+            <div class="d-flex justify-content-center">
+                <button class="btn btn-primary btn-lg px-5" onclick="validatePayment()">
+                    Validate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Product database
+        const products = [
+            { id: 1, name: 'Acoustic Bloc Screens', price: 305.33, image: '/api/placeholder/200/200', sku: 'FURN_6666' },
+            { id: 2, name: 'Apple', price: 0.99, image: '/api/placeholder/200/200', sku: 'FOOD_0001' },
+            { id: 3, name: 'Burger', price: 7.43, image: '/api/placeholder/200/200', sku: 'FOOD_0002' },
+            { id: 4, name: 'Cabinet', price: 126.00, image: '/api/placeholder/200/200', sku: 'FURN_0001' },
+        ];
+
+        // Shopping cart
+        let cart = [];
+        const taxRate = 0.13;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            displayProducts();
+            updateCart();
+        });
+
+        function displayProducts() {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.innerHTML = products.map(product => `
+                <div class="col-6">
+                    <div class="card product-card" onclick="addToCart(${product.id})">
+                        <img src="${product.image}" class="card-img-top" alt="${product.name}">
+                        <div class="card-body">
+                            <h6>${product.name}</h6>
+                            <p class="text-primary mb-0">$ ${product.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                const existingItem = cart.find(item => item.id === productId);
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({ ...product, quantity: 1 });
+                }
+                updateCart();
+            }
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            cartItems.innerHTML = cart.map(item => `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5>[${item.sku}] ${item.name}</h5>
+                                <p class="text-muted">${item.quantity} Units at $ ${item.price.toFixed(2)} / Units</p>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
+                                    <button class="btn btn-sm btn-outline-secondary">${item.quantity}</button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
+                                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="removeFromCart(${item.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <h4>$ ${(item.price * item.quantity).toFixed(2)}</h4>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            updateTotals();
+            updateOrderCount();
+        }
+
+        function updateTotals() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+
+            document.getElementById('totalAmount').textContent = total.toFixed(2);
+            document.getElementById('taxAmount').textContent = tax.toFixed(2);
+        }
+
+        function updateOrderCount() {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('orderCount').textContent = totalItems;
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCart();
+        }
+
+        function updateQuantity(productId, newQuantity) {
+            if (newQuantity <= 0) {
+                removeFromCart(productId);
+            } else {
+                const item = cart.find(item => item.id === productId);
+                if (item) {
+                    item.quantity = newQuantity;
+                    updateCart();
+                }
+            }
+        }
+
+        function showPaymentScreen() {
+            document.getElementById('paymentScreen').style.display = 'block';
+            updatePaymentAmounts();
+        }
+
+        function hidePaymentScreen() {
+            document.getElementById('paymentScreen').style.display = 'none';
+        }
+
+        function processPayment() {
+            if (cart.length === 0) {
+                alert('Cart is empty!');
+                return;
+            }
+            showPaymentScreen();
+        }
+
+        function updatePaymentAmounts() {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = total * taxRate;
+            const totalDue = total + tax;
+            
+            document.getElementById('remainingAmount').textContent = totalDue.toFixed(2);
+            document.getElementById('totalDueAmount').textContent = totalDue.toFixed(2);
+            document.getElementById('changeAmount').textContent = '0.00';
+        }
+
+        function selectPaymentMethod(method) {
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.remove('selected-method');
+            });
+            
+            event.currentTarget.classList.add('selected-method');
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = total * taxRate;
+            const totalDue = total + tax;
+            
+           
+    document.getElementById('paymentSummary').innerHTML = `
+        <div class="d-flex justify-content-between text-muted">
+            <span>${method.charAt(0).toUpperCase() + method.slice(1)}</span>
+            <span>$${totalDue.toFixed(2)}</span>
+            <button class="btn btn-sm btn-link text-danger" onclick="removePaymentMethod()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+}
+
+function removePaymentMethod() {
+    document.querySelectorAll('.payment-method').forEach(el => {
+        el.classList.remove('selected-method');
+    });
+    document.getElementById('paymentSummary').innerHTML = '';
+    document.getElementById('remainingAmount').textContent = document.getElementById('totalDueAmount').textContent;
+    document.getElementById('changeAmount').textContent = '0.00';
+}
+
+let currentAmount = '';
+
+// Handle keypad input
+document.querySelector('.payment-keypad').addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+        const value = e.target.textContent;
+        handleKeypadInput(value);
+    }
+});
+
+function handleKeypadInput(value) {
+    const totalDue = parseFloat(document.getElementById('totalDueAmount').textContent);
+    
+    switch(value) {
+        case '+10':
+            currentAmount = (parseFloat(currentAmount || '0') + 10).toString();
+            break;
+        case '+20':
+            currentAmount = (parseFloat(currentAmount || '0') + 20).toString();
+            break;
+        case '+50':
+            currentAmount = (parseFloat(currentAmount || '0') + 50).toString();
+            break;
+        case '+/-':
+            currentAmount = currentAmount.startsWith('-') ? 
+                currentAmount.substring(1) : `-${currentAmount}`;
+            break;
+        case '.':
+            if (!currentAmount.includes('.')) {
+                currentAmount = (currentAmount || '0') + '.';
+            }
+            break;
+        default:
+            if (e.target.classList.contains('fa-backspace')) {
+                currentAmount = currentAmount.slice(0, -1);
+            } else if (!isNaN(value)) {
+                currentAmount = (currentAmount || '') + value;
+            }
+    }
+
+    const paidAmount = parseFloat(currentAmount) || 0;
+    const remaining = totalDue - paidAmount;
+    const change = remaining < 0 ? Math.abs(remaining) : 0;
+
+    document.getElementById('remainingAmount').textContent = (remaining > 0 ? remaining : 0).toFixed(2);
+    document.getElementById('changeAmount').textContent = change.toFixed(2);
+}
+
+function validatePayment() {
+    const remaining = parseFloat(document.getElementById('remainingAmount').textContent);
+    const selectedMethod = document.querySelector('.payment-method.selected-method');
+    
+    if (!selectedMethod) {
+        alert('Please select a payment method');
+        return;
+    }
+
+    if (remaining > 0) {
+        alert('Please enter the full payment amount');
+        return;
+    }
+
+    // Success! Clear cart and close payment screen
+    alert('Payment successful!');
+    cart = [];
+    currentAmount = '';
+    updateCart();
+    hidePaymentScreen();
+}
+
+// Add search functionality
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const filteredProducts = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) || 
+        product.sku.toLowerCase().includes(searchTerm)
+    );
+    
+    const productGrid = document.getElementById('productGrid');
+    productGrid.innerHTML = filteredProducts.map(product => `
+        <div class="col-6">
+            <div class="card product-card" onclick="addToCart(${product.id})">
+                <img src="${product.image}" class="card-img-top" alt="${product.name}">
+                <div class="card-body">
+                    <h6>${product.name}</h6>
+                    <p class="text-primary mb-0">$ ${product.price.toFixed(2)}</p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+});
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
