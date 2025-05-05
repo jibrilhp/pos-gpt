@@ -4,21 +4,25 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: Q9e5CGhwTYVhlt1
       POSTGRES_DB: restaurant
     ports:
-      - "5432:5432"
+      - "5439:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   web:
     build: .
     ports:
-      - "8000:8000"
+      - "5009:8000"
     depends_on:
       - db
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/restaurant
+      DATABASE_URL: postgresql://postgres:Q9e5CGhwTYVhlt1@db:5432/restaurant
 
 volumes:
   postgres_data:
+
+networks:
+  restaurant-network:
+    driver: bridge
