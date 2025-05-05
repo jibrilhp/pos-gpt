@@ -34,8 +34,6 @@ venv/
 *.log
 logs/
 
-# Static files
-/static/
 
 # Cache
 .cache/
