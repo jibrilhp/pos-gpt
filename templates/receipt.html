@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Struk Pembayaran</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: monospace;
+            width: 58mm;
+            margin: 0 auto;
+            padding: 0;
+            font-size: 12px;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .line {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .small {
+            font-size: 10px;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                width: 100%;
+            }
+
+            button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="center">
+        <strong>Dapur Antar 24 Jam</strong><br>
+        Jl. Makan Enak No. 1<br>
+        Telp: 08xx-xxxx-xxxx<br>
+        <div class="line"></div>
+        <strong>STRUK PEMBAYARAN</strong><br>
+        Order ID: {{ order.id }}<br>
+        {{ order.created_at.strftime('%d-%m-%Y %H:%M') }}
+    </div>
+
+    <div class="line"></div>
+    <div>
+        Nama: {{ order.customer }}<br>
+        {% if order.phone %}HP: {{ order.phone }}<br>{% endif %}
+        {% if order.note %}Catatan: {{ order.note }}<br>{% endif %}
+    </div>
+
+    <div class="line"></div>
+
+    {% for item in items %}
+    <div class="item-row">
+        <span>{{ item.qty }}x {{ item.menu.name }}</span>
+        <span>Rp{{ "{:,}".format(item.menu.price * item.qty) }}</span>
+    </div>
+    {% endfor %}
+
+    <div class="line"></div>
+    <div class="item-row">
+        <strong>Total</strong>
+        <strong>Rp{{ "{:,}".format(order.total) }}</strong>
+    </div>
+
+    <div class="line"></div>
+    <div class="center small">
+        Terima kasih telah memesan!<br>
+        Struk ini bukan bukti pembayaran resmi.
+    </div>
+
+    <button onclick="window.print()">Cetak Struk</button>
+</body>
+
+</html>

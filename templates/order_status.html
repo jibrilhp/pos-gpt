@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Status Pesanan</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 1.5rem;
+    }
+
+    .status-img {
+      max-width: 200px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    .status-title {
+      font-size: 1.4rem;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .status-subtext {
+      text-align: center;
+      color: #666;
+      margin-bottom: 1rem;
+    }
+
+    .order-details {
+      border-top: 1px solid #ccc;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+    }
+  </style>
+
+  <script>
+    setInterval(() => {
+      fetch(window.location.href)
+        .then(response => response.text())
+        .then(html => {
+          document.open();
+          document.write(html);
+          document.close();
+        });
+    }, 10000);
+
+    function getElapsedTime(createdAt) {
+      const created = new Date(createdAt);
+      const now = new Date();
+      const seconds = Math.floor((now - created) / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const remaining = 5 - minutes;
+      return remaining > 0 ? `(${remaining}:${59 - (seconds % 60)})` : '';
+    }
+  </script>
+</head>
+
+<body>
+  {% if not order.is_paid %}
+  <div class="text-center">
+    <img src="/static/qris.png" alt="QRIS" class="img-fluid" style="max-width: 200px;">
+    <p class="text-danger mt-2">Silakan bayar melalui QRIS ini.<br>Admin akan menandai setelah pembayaran diterima.</p>
+  </div>
+  {% endif %}
+
+
+  <img src="/static/status-waiting.png" alt="Status Ilustrasi" class="status-img">
+
+  <div class="status-title">
+    {% if order.status == "Menunggu Konfirmasi" %}
+      Pesanan terkirim – Menunggu konfirmasi resto
+    {% elif order.status == "Diproses" %}
+      Pesanan sedang diproses di dapur
+    {% elif order.status == "Sudah Siap" %}
+      Pesanan sudah siap – Menunggu diambil / diantar
+    {% elif order.status == "Diantar" %}
+      Pesanan sedang diantar ke tujuan
+    {% elif order.status == "Selesai" %}
+      Pesanan selesai – Terima kasih!
+    {% else %}
+      Status pesanan tidak dikenal
+    {% endif %}
+  </div>
+  
+  <div class="status-subtext">
+    Staff resto akan segera mengkonfirmasi pesanan Anda
+    <br><span style="color:red;">(auto refresh setiap 10 detik)</span>
+  </div>
+
+  <p class="text-center">Pesanan dibuat<br><strong>{{ order.created_at.strftime('%-d %B %Y pukul %H:%M') }}</strong></p>
+
+  <div class="order-details">
+    <h5>Pesanan Anda</h5>
+    <p>{{ order.customer }}</p>
+    <ul class="list-group">
+      {% for item in items %}
+      <li class="list-group-item d-flex justify-content-between">
+        <span>{{ item.qty }}x {{ item.menu.name }}</span>
+        <span>Rp{{ "{:,}".format(item.menu.price * item.qty) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+
+</html>

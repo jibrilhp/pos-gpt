@@ -1,113 +1,149 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from auth import (
-    authenticate_user, create_access_token, get_current_user,
-    get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES
-)
-from datetime import timedelta
-from sqlalchemy.orm import Session
-from models import Customer, Product, Sale
-from database import SessionLocal, engine
-from pydantic import BaseModel
+
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-from dependencies import get_db  # Import get_db from dependencies
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship, joinedload
+
+from datetime import datetime, timedelta
+
+
+import uuid
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost/restaurant")
 
 app = FastAPI()
-
-
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+Base = declarative_base()
+
+class Menu(Base):
+    __tablename__ = "menu"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    price = Column(Integer)
+
+class Order(Base):
+    __tablename__ = "orders"
+    id = Column(String, primary_key=True)
+    customer = Column(String)
+    phone = Column(String)         # ➕ Tambahkan ini
+    note = Column(String)          # ➕ Tambahkan ini
+    status = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    items = relationship("OrderItem", back_populates="order")
+    is_paid = Column(Boolean, default=False)
+
+
+class OrderItem(Base):
+    __tablename__ = "order_items"
+    id = Column(Integer, primary_key=True)
+    order_id = Column(String, ForeignKey("orders.id"))
+    menu_id = Column(Integer, ForeignKey("menu.id"))
+    qty = Column(Integer)
+    order = relationship("Order", back_populates="items")
+    menu = relationship("Menu")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base.metadata.create_all(bind=engine)
 
 @app.get("/", response_class=HTMLResponse)
-def read_root():
-    with open("templates/index.html", "r") as file:
-        return file.read()
-    
+def menu_page(request: Request):
+    db = SessionLocal()
+    menu = db.query(Menu).all()
+    db.close()
+    return templates.TemplateResponse("menu.html", {"request": request, "menu": menu})
 
-
-# Pydantic models for request/response validation
-class CustomerCreate(BaseModel):
-    name: str
-    phone: str
-    email: str = None
-
-class ProductCreate(BaseModel):
-    name: str
-    price: float
-    stock: int
-
-class SaleCreate(BaseModel):
-    customer_id: int
-    product_id: int
-    quantity: int
-
-
-# Customer endpoints
-@app.post("/customers/")
-def create_customer(customer: CustomerCreate, db: Session = Depends(get_db)):
-    db_customer = Customer(**customer.dict())
-    db.add(db_customer)
-    db.commit()
-    db.refresh(db_customer)
-    return db_customer
-
-
-# Product endpoints
-@app.post("/products/")
-def create_product(product: ProductCreate, db: Session = Depends(get_db)):
-    db_product = Product(**product.dict())
-    db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
-    return db_product
-
-@app.get("/products/")
-def get_products(db: Session = Depends(get_db)):
-    return db.query(Product).all()
-
-# Sale endpoints
-@app.post("/sales/")
-def create_sale(sale: SaleCreate, db: Session = Depends(get_db)):
-    product = db.query(Product).filter(Product.id == sale.product_id).first()
-    if not product or product.stock < sale.quantity:
-        raise HTTPException(status_code=400, detail="Product not available or insufficient stock")
-
-    total_price = product.price * sale.quantity
-    db_sale = Sale(**sale.dict(), total_price=total_price)
-    db.add(db_sale)
-    db.commit()
-    db.refresh(db_sale)
-
-    # Update product stock
-    product.stock -= sale.quantity
-    db.commit()
-
-    return db_sale
-
-@app.get("/sales/")
-def get_sales(db: Session = Depends(get_db)):
-    return db.query(Sale).all()
-
-
-
-# Token endpoint
-@app.post("/token")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.name}, expires_delta=access_token_expires
+@app.post("/order", response_class=HTMLResponse)
+def place_order(
+    request: Request,
+    customer_name: str = Form(...),
+    customer_phone: str = Form(...),   # ➕
+    customer_note: str = Form(None),   # ➕ optional
+    item_ids: list[int] = Form(...),
+    quantities: list[int] = Form(...)
+):
+    db = SessionLocal()
+    order_id = str(uuid.uuid4())[:8]
+    order = Order(
+        id=order_id,
+        customer=customer_name,
+        phone=customer_phone,
+        note=customer_note,
+        status="Menunggu Konfirmasi"
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    db.add(order)
 
-# Protected endpoint example
-@app.get("/users/me/")
-def read_users_me(current_user: Customer = Depends(get_current_user)):
-    return current_user
+    for i, menu_id in enumerate(item_ids):
+        qty = int(quantities[i])
+        if qty > 0:
+            item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty)
+            db.add(item)
+
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/order-status/{order_id}", status_code=303)
+
+
+@app.get("/order-status/{order_id}", response_class=HTMLResponse)
+def order_status(request: Request, order_id: str):
+    db = SessionLocal()
+    order = db.query(Order).filter(Order.id == order_id).first()
+    items = db.query(OrderItem).options(joinedload(OrderItem.menu)).filter(OrderItem.order_id == order_id).all()
+    db.close()
+    return templates.TemplateResponse("order_status.html", {"request": request, "order": order, "items": items})
+
+@app.post("/mark-paid/{order_id}", response_class=RedirectResponse)
+def mark_paid(order_id: str):
+    db = SessionLocal()
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order:
+        order.is_paid = True
+        db.commit()
+    db.close()
+    return RedirectResponse(url="/admin", status_code=303)
+
+
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    db = SessionLocal()
+    orders = db.query(Order).order_by(Order.created_at.desc()).all()
+    db.close()
+    return templates.TemplateResponse("admin.html", {"request": request, "orders": orders})
+
+@app.post("/update-status/{order_id}", response_class=RedirectResponse)
+def update_status(order_id: str, status: str = Form(...)):
+    db = SessionLocal()
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order:
+        elapsed = datetime.utcnow() - order.created_at
+        if not order.is_paid and elapsed > timedelta(minutes=10):
+            db.close()
+            return HTMLResponse("Order belum dibayar dan sudah lewat 10 menit.", status_code=403)
+        order.status = status
+        db.commit()
+    db.close()
+    return RedirectResponse(url="/admin", status_code=303)
+
+@app.get("/receipt/{order_id}", response_class=HTMLResponse)
+def print_receipt(request: Request, order_id: str):
+    db = SessionLocal()
+    order = db.query(Order).filter(Order.id == order_id).first()
+    items = db.query(OrderItem).options(joinedload(OrderItem.menu)).filter(OrderItem.order_id == order_id).all()
+    
+    # Hitung total manual (karena tidak disimpan di DB)
+    total = sum(item.menu.price * item.qty for item in items)
+    order.total = total
+
+    db.close()
+    return templates.TemplateResponse("receipt.html", {
+        "request": request,
+        "order": order,
+        "items": items
+    })

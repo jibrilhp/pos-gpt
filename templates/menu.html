@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Menu</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <style>
+    .menu-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .item-info {
+      flex: 1;
+    }
+
+    .qty-input {
+      width: 60px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body class="p-4">
+  <h2>Dapur Antar 24 Jam</h2>
+
+
+
+  <form method="post" action="/order">
+    <div class="mb-3">
+      <label for="customer_name" class="form-label">Nama Customer</label>
+      <input class="form-control" type="text" name="customer_name" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="customer_name" class="form-label">Nomor HP yang bisa dihubungi</label>
+      <input class="form-control" type="text" name="customer_phone" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="customer_name" class="form-label">Catatan dari kamu</label>
+      <input class="form-control" type="text" name="customer_note" >
+    </div>
+
+    <div id="menuContainer">
+      <!-- Search box -->
+      <div class="mb-3 position-relative">
+        <input id="searchBox" class="form-control ps-5" type="text" placeholder="Cari menu..." onkeyup="filterMenu()">
+        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+      </div>
+
+      {% for item in menu %}
+      <div class="menu-card" data-name="{{ item.name | lower }}">
+        <div class="item-info">
+          <h5>{{ item.name }}</h5>
+          <p>Rp{{ "{:,}".format(item.price) }}</p>
+          <input type="hidden" name="item_ids" value="{{ item.id }}">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <input class="form-control qty-input" type="number" name="quantities" value="0" min="0">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick="incrementQty(this)">+</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <button class="btn btn-danger w-100 mt-3" type="submit">Submit Pesanan</button>
+  </form>
+
+  <script>
+    function incrementQty(button) {
+      const input = button.parentElement.querySelector('input[type=number]');
+      input.value = parseInt(input.value) + 1;
+    }
+
+    function filterMenu() {
+      const query = document.getElementById("searchBox").value.toLowerCase();
+      const cards = document.querySelectorAll(".menu-card");
+      cards.forEach(card => {
+        const name = card.getAttribute("data-name");
+        card.style.display = name.includes(query) ? "flex" : "none";
+      });
+    }
+  </script>
+</body>
+
+</html>
