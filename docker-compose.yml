@@ -10,6 +10,8 @@ services:
       - "5439:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - restaurant-network
 
   web:
     build: .
@@ -19,6 +21,8 @@ services:
       - db
     environment:
       DATABASE_URL: postgresql://postgres:Q9e5CGhwTYVhlt1@db:5432/restaurant
+    networks:
+      - restaurant-network
 
 volumes:
   postgres_data:
