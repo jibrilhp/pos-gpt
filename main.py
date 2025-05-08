@@ -68,7 +68,7 @@ def place_order(
     customer_note: str = Form(None),
     item_ids: list[int] = Form(...),
     quantities: list[int] = Form(...),
-    notes: dict = Form(...)  # Expecting a dictionary for notes
+    notes: dict = Form(None)  # Expecting a dictionary for notes
 ):
     db = SessionLocal()
     order_id = str(uuid.uuid4())[:8]
@@ -91,6 +91,7 @@ def place_order(
     db.commit()
     db.close()
     return RedirectResponse(f"/order-status/{order_id}", status_code=303)
+
 
 
 
