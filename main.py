@@ -159,16 +159,21 @@ def update_status(order_id: str, status: str = Form(...)):
 @app.get("/receipt/{order_id}", response_class=HTMLResponse)
 def print_receipt(request: Request, order_id: str):
     db = SessionLocal()
-    order = db.query(Order).filter(Order.id == order_id).first()
-    items = db.query(OrderItem).options(joinedload(OrderItem.menu)).filter(OrderItem.order_id == order_id).all()
+
+    # Ensure that items are eagerly loaded with the order
+    order = db.query(Order).options(joinedload(Order.items).joinedload(OrderItem.menu)).filter(Order.id == order_id).first()
     
-    # Hitung total manual (karena tidak disimpan di DB)
-    total = sum(item.menu.price * item.qty for item in items)
+    if not order:
+        db.close()
+        return HTMLResponse("Order not found", status_code=404)
+
+    # Calculate the total price
+    total = sum(item.menu.price * item.qty for item in order.items)
     order.total = total
 
     db.close()
     return templates.TemplateResponse("receipt.html", {
         "request": request,
         "order": order,
-        "items": items
+        "items": order.items
     })
