@@ -135,7 +135,7 @@ def update_status(order_id: str, status: str = Form(...)):
         db.commit()
     db.close()
     return RedirectResponse(url="/admin", status_code=303)
-
+         
 @app.get("/receipt/{order_id}", response_class=HTMLResponse)
 def print_receipt(request: Request, order_id: str):
     db = SessionLocal()
