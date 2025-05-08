@@ -5,6 +5,7 @@
   <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <style>
     .search-box {
       margin-bottom: 1rem;
@@ -21,11 +22,40 @@
     }
 
     .order-details {
-      display: none;
+      background-color: #f8f9fa;
+      transition: all 0.3s ease;
     }
 
     .expand-btn {
       cursor: pointer;
+    }
+
+    .card {
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 10px;
+    }
+
+    .order-items-container {
+      padding: 10px;
+    }
+
+    .detail-row {
+      border-left: 3px solid #6c757d;
+    }
+
+    .collapse-btn {
+      cursor: pointer;
+      padding: 5px;
+      color: #0d6efd;
+    }
+
+    .menu-item {
+      border-bottom: 1px solid #e9ecef;
+      padding: 8px 0;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
@@ -42,6 +72,7 @@
     <table class="table table-bordered table-striped table-hover align-middle text-sm" id="orderTable">
       <thead class="table-dark">
         <tr>
+          <th></th>
           <th>Order ID</th>
           <th>Nama</th>
           <th>No. HP</th>
@@ -55,7 +86,12 @@
       </thead>
       <tbody>
         {% for order in orders|sort(attribute='created_at', reverse=False) %}
-        <tr>
+        <tr class="main-row" id="row-{{ order.id }}">
+          <td>
+            <span class="collapse-btn" onclick="toggleDetails('{{ order.id }}')">
+              <i class="bi bi-dash-circle" id="icon-{{ order.id }}"></i>
+            </span>
+          </td>
           <td>{{ order.id }}</td>
           <td>{{ order.customer }}</td>
           <td>{{ order.phone }}</td>
@@ -92,26 +128,41 @@
         </tr>
 
         <!-- Expandable Details Row -->
-        <tr class="order-details" id="details-{{ order.id }}">
-          <td colspan="8">
-            <table class="table table-sm table-bordered">
-              <thead class="table-dark">
-                <tr>
-                  <th>Menu</th>
-                  <th>Qty</th>
-                  <th>Catatan Menu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in order.items %}
-                <tr>
-                  <td>{{ item.menu.name }}</td>
-                  <td>{{ item.qty }}</td>
-                  <td>{{ item.note }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+        <tr class="detail-row" id="details-{{ order.id }}">
+          <td colspan="10" class="p-0">
+            <div class="card border-0 m-2">
+              <div class="card-header bg-light">
+                <strong>Detail Pesanan #{{ order.id }}</strong>
+              </div>
+              <div class="card-body order-items-container">
+                <div class="row">
+                  {% for item in order.items %}
+                  <div class="col-md-4 mb-2">
+                    <div class="card h-100">
+                      <div class="card-body menu-item">
+                        <h5 class="card-title">{{ item.menu.name }}</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span class="badge bg-primary">Qty: {{ item.qty }}</span>
+                          <span class="text-muted">Rp {{ item.menu.price }}</span>
+                        </div>
+                        {% if item.note %}
+                        <div class="mt-2">
+                          <small class="text-muted">Catatan:</small>
+                          <p class="mb-0 small">{{ item.note }}</p>
+                        </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="card-footer bg-light text-end">
+                <strong>Total Item: {{ order.items|length }}</strong>
+                <strong class="ms-3">Total Harga: Rp {{ order.items|sum(attribute=lambda x: x.menu.price * x.qty)
+                  }}</strong>
+              </div>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -123,22 +174,48 @@
   <script>
     function filterTable() {
       const input = document.getElementById("searchInput").value.toLowerCase();
-      const rows = document.querySelectorAll("#orderTable tbody tr");
-      rows.forEach(row => {
+      const mainRows = document.querySelectorAll(".main-row");
+
+      mainRows.forEach(row => {
         const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(input) ? "" : "none";
+        const orderId = row.id.split('-')[1];
+        const detailRow = document.getElementById('details-' + orderId);
+
+        if (text.includes(input)) {
+          row.style.display = "";
+          if (detailRow.style.display !== "none") {
+            detailRow.style.display = "";
+          }
+        } else {
+          row.style.display = "none";
+          detailRow.style.display = "none";
+        }
       });
     }
 
     // Function to toggle order details visibility
     function toggleDetails(orderId) {
       const detailsRow = document.getElementById('details-' + orderId);
-      if (detailsRow.style.display === "none" || detailsRow.style.display === "") {
-        detailsRow.style.display = "table-row";
+      const icon = document.getElementById('icon-' + orderId);
+
+      if (detailsRow.style.display === "none") {
+        detailsRow.style.display = "";
+        icon.classList.remove("bi-plus-circle");
+        icon.classList.add("bi-dash-circle");
       } else {
         detailsRow.style.display = "none";
+        icon.classList.remove("bi-dash-circle");
+        icon.classList.add("bi-plus-circle");
       }
     }
+
+    // Initialize all detail rows to be visible by default
+    document.addEventListener('DOMContentLoaded', function () {
+      const detailRows = document.querySelectorAll('.detail-row');
+      detailRows.forEach(row => {
+        row.style.display = "";
+      });
+    });
   </script>
 </body>
 
