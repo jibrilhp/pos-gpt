@@ -44,8 +44,10 @@ class OrderItem(Base):
     order_id = Column(String, ForeignKey("orders.id"))
     menu_id = Column(Integer, ForeignKey("menu.id"))
     qty = Column(Integer)
+    note = Column(String)  # Add this field for notes
     order = relationship("Order", back_populates="items")
     menu = relationship("Menu")
+
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -62,10 +64,11 @@ def menu_page(request: Request):
 def place_order(
     request: Request,
     customer_name: str = Form(...),
-    customer_phone: str = Form(...),   # ➕
-    customer_note: str = Form(None),   # ➕ optional
+    customer_phone: str = Form(...),
+    customer_note: str = Form(None),
     item_ids: list[int] = Form(...),
-    quantities: list[int] = Form(...)
+    quantities: list[int] = Form(...),
+    notes: list[str] = Form(...)  # New field for notes
 ):
     db = SessionLocal()
     order_id = str(uuid.uuid4())[:8]
@@ -81,12 +84,14 @@ def place_order(
     for i, menu_id in enumerate(item_ids):
         qty = int(quantities[i])
         if qty > 0:
-            item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty)
+            item_note = notes[i]  # Get the note for this item
+            item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=item_note)
             db.add(item)
 
     db.commit()
     db.close()
     return RedirectResponse(f"/order-status/{order_id}", status_code=303)
+
 
 
 @app.get("/order-status/{order_id}", response_class=HTMLResponse)
