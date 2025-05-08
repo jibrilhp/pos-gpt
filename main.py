@@ -84,9 +84,13 @@ def place_order(
     for i, menu_id in enumerate(item_ids):
         qty = int(quantities[i])
         if qty > 0:
-            item_note = notes.get(str(menu_id), '')  # Get the note for this item, default to empty if none
-            item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=item_note)
-            db.add(item)
+            try:
+                item_note = notes.get(str(menu_id), '')  # Get the note for this item, default to empty if none
+                item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=item_note)
+                db.add(item)
+            except Exception as e:
+                continue
+          
 
     db.commit()
     db.close()
