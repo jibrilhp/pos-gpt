@@ -123,6 +123,20 @@ def mark_paid(order_id: str, db: Session = Depends(get_db)):
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
+    # Check for orders that need to be auto-cancelled (not paid after 10 minutes)
+    unpaid_orders = db.query(Order).filter(
+        Order.is_paid == False,
+        Order.status != "Cancelled",
+        Order.created_at < datetime.utcnow() - timedelta(minutes=10)
+    ).all()
+    
+    # Auto-cancel orders older than 10 minutes that are not paid
+    for order in unpaid_orders:
+        order.status = "Cancelled"
+    
+    if unpaid_orders:
+        db.commit()
+    
     # Eagerly load the related items and menu for each order
     orders = db.query(Order).options(
         joinedload(Order.items).joinedload(OrderItem.menu)
@@ -136,6 +150,20 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/api/new-orders", response_class=JSONResponse)
 def check_new_orders(db: Session = Depends(get_db)):
+    # Check for orders that need to be auto-cancelled (not paid after 10 minutes)
+    unpaid_orders = db.query(Order).filter(
+        Order.is_paid == False,
+        Order.status != "Cancelled",
+        Order.created_at < datetime.utcnow() - timedelta(minutes=10)
+    ).all()
+    
+    # Auto-cancel orders older than 10 minutes that are not paid
+    for order in unpaid_orders:
+        order.status = "Cancelled"
+    
+    if unpaid_orders:
+        db.commit()
+    
     # Find orders that are not paid and are in "Menunggu Konfirmasi" status
     new_orders = db.query(Order).filter(
         Order.is_paid == False,
@@ -147,12 +175,22 @@ def check_new_orders(db: Session = Depends(get_db)):
 @app.post("/update-status/{order_id}", response_class=RedirectResponse)
 def update_status(order_id: str, status: str = Form(...), db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
-    if order:
-        elapsed = datetime.utcnow() - order.created_at
-        if not order.is_paid and elapsed > timedelta(minutes=10):
-            return HTMLResponse("Order belum dibayar dan sudah lewat 10 menit.", status_code=403)
+    if not order:
+        return HTMLResponse("Order tidak ditemukan", status_code=404)
+        
+    # Allow setting to Cancelled status anytime
+    if status == "Cancelled":
         order.status = status
         db.commit()
+        return RedirectResponse(url="/admin", status_code=303)
+    
+    # For other status changes, check if it's paid or within the 10-minute window
+    elapsed = datetime.utcnow() - order.created_at
+    if not order.is_paid and elapsed > timedelta(minutes=10):
+        return HTMLResponse("Order belum dibayar dan sudah lewat 10 menit.", status_code=403)
+    
+    order.status = status
+    db.commit()
     return RedirectResponse(url="/admin", status_code=303)
          
 @app.get("/receipt/{order_id}", response_class=HTMLResponse)

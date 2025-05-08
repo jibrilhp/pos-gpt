@@ -36,6 +36,11 @@
       background-color: #fff3cd;
     }
 
+    .cancelled-order {
+      background-color: #f8d7da;
+      opacity: 0.8;
+    }
+
     .unpaid {
       color: #dc3545;
       font-weight: bold;
@@ -44,6 +49,12 @@
     .paid {
       color: #198754;
       font-weight: bold;
+    }
+
+    .countdown {
+      font-size: 0.9rem;
+      color: #dc3545;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -56,12 +67,12 @@
       {% for order in orders %}
       <div class="col-md-6">
         <div
-          class="card order-card {% if order.status == 'Menunggu Konfirmasi' and not order.is_paid %}new-order{% endif %}">
+          class="card order-card {% if order.status == 'Menunggu Konfirmasi' and not order.is_paid %}new-order{% elif order.status == 'Cancelled' %}cancelled-order{% endif %}">
           <div class="order-header">
             <div class="d-flex justify-content-between align-items-center">
               <h5 class="mb-0">Order #{{ order.id }}</h5>
               <span
-                class="badge {% if order.status == 'Menunggu Konfirmasi' %}bg-warning{% elif order.status == 'Diproses' %}bg-primary{% elif order.status == 'Siap' %}bg-success{% elif order.status == 'Selesai' %}bg-secondary{% endif %}">
+                class="badge {% if order.status == 'Menunggu Konfirmasi' %}bg-warning{% elif order.status == 'Diproses' %}bg-primary{% elif order.status == 'Siap' %}bg-success{% elif order.status == 'Selesai' %}bg-secondary{% elif order.status == 'Cancelled' %}bg-danger{% endif %}">
                 {{ order.status }}
               </span>
             </div>
@@ -70,12 +81,18 @@
               <span class="{% if order.is_paid %}paid{% else %}unpaid{% endif %}">
                 {% if order.is_paid %}Dibayar{% else %}Belum Dibayar{% endif %}
               </span>
-              {% if not order.is_paid %}
+              {% if not order.is_paid and order.status != 'Cancelled' %}
               <form action="/mark-paid/{{ order.id }}" method="post" class="d-inline ms-2">
                 <button type="submit" class="btn btn-sm btn-outline-success">Tandai Sudah Dibayar</button>
               </form>
               {% endif %}
             </div>
+
+            {% if not order.is_paid and order.status != 'Cancelled' %}
+            <div class="countdown" data-created="{{ order.created_at.timestamp() }}">
+              Waktu tersisa: <span class="time-remaining"></span>
+            </div>
+            {% endif %}
           </div>
           <div class="order-details">
             <h6>{{ order.customer }} ({{ order.phone }})</h6>
@@ -110,6 +127,7 @@
                   <option value="Diproses" {% if order.status=='Diproses' %}selected{% endif %}>Diproses</option>
                   <option value="Siap" {% if order.status=='Siap' %}selected{% endif %}>Siap</option>
                   <option value="Selesai" {% if order.status=='Selesai' %}selected{% endif %}>Selesai</option>
+                  <option value="Cancelled" {% if order.status=='Cancelled' %}selected{% endif %}>Cancelled</option>
                 </select>
                 <button type="submit" class="btn btn-primary">Update</button>
               </form>
@@ -129,7 +147,7 @@
 
   <!-- Audio element for notification sound -->
   <audio id="notification-sound" preload="auto">
-    <source src="https://cdnjs.cloudflare.com/ajax/libs/sound-effects/1.0.2/alert-notification.mp3" type="audio/mpeg">
+    <source src="/static/notification.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
 
@@ -153,9 +171,37 @@
         .catch(error => console.error('Error checking for new orders:', error));
     }
 
-    // Run the function immediately and then every 5 seconds
+    // Update countdown timers for all unpaid orders
+    function updateCountdowns() {
+      const countdowns = document.querySelectorAll('.countdown');
+      countdowns.forEach(countdown => {
+        const createdTimestamp = parseFloat(countdown.dataset.created);
+        const createdDate = new Date(createdTimestamp * 1000);
+        const expiryDate = new Date(createdDate.getTime() + 10 * 60 * 1000); // 10 minutes
+        const now = new Date();
+
+        // Time difference in seconds
+        let timeLeft = Math.floor((expiryDate - now) / 1000);
+
+        if (timeLeft <= 0) {
+          countdown.querySelector('.time-remaining').textContent = "Pesanan akan dibatalkan...";
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          const minutes = Math.floor(timeLeft / 60);
+          const seconds = timeLeft % 60;
+          countdown.querySelector('.time-remaining').textContent =
+            `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+      });
+    }
+
+    // Run the functions immediately and then at intervals
     checkForNewOrders();
+    updateCountdowns();
     setInterval(checkForNewOrders, 5000);
+    setInterval(updateCountdowns, 1000);
 
     // Set up a timer to refresh the page every 30 seconds
     setTimeout(function () {
