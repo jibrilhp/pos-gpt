@@ -61,15 +61,24 @@ def menu_page(request: Request):
     return templates.TemplateResponse("menu.html", {"request": request, "menu": menu})
 
 @app.post("/order", response_class=HTMLResponse)
-def place_order(
+async def place_order(
     request: Request,
     customer_name: str = Form(...),
     customer_phone: str = Form(...),
     customer_note: str = Form(None),
     item_ids: list[int] = Form(...),
     quantities: list[int] = Form(...),
-    notes: dict = Form(None)  # Expecting a dictionary for notes
 ):
+    form_data = await request.form()
+    
+    # Parse the notes manually since they are sent as notes[1], notes[2], etc.
+    notes = {}
+    for key, value in form_data.items():
+        if key.startswith('notes['):
+            # Extract the item ID from the notes key (e.g., 'notes[1]' -> 1)
+            item_id = int(key.split('[')[1].split(']')[0])
+            notes[item_id] = value
+
     db = SessionLocal()
     order_id = str(uuid.uuid4())[:8]
     order = Order(
@@ -84,20 +93,13 @@ def place_order(
     for i, menu_id in enumerate(item_ids):
         qty = int(quantities[i])
         if qty > 0:
-            try:
-                item_note = notes.get(str(menu_id), '')  # Get the note for this item, default to empty if none
-                item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=item_note)
-                db.add(item)
-            except Exception as e:
-                continue
-          
+            item_note = notes.get(menu_id, '')  # Get the note for this item, default to empty if none
+            item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=item_note)
+            db.add(item)
 
     db.commit()
     db.close()
     return RedirectResponse(f"/order-status/{order_id}", status_code=303)
-
-
-
 
 
 @app.get("/order-status/{order_id}", response_class=HTMLResponse)
