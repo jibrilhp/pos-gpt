@@ -68,7 +68,7 @@ def place_order(
     customer_note: str = Form(None),
     item_ids: list[int] = Form(...),
     quantities: list[int] = Form(...),
-    notes: list[str] = Form(...)  # New field for notes
+    notes: dict = Form(...)  # Expecting a dictionary for notes
 ):
     db = SessionLocal()
     order_id = str(uuid.uuid4())[:8]
@@ -84,13 +84,14 @@ def place_order(
     for i, menu_id in enumerate(item_ids):
         qty = int(quantities[i])
         if qty > 0:
-            item_note = notes[i]  # Get the note for this item
+            item_note = notes.get(str(menu_id), '')  # Get the note for this item, default to empty if none
             item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=item_note)
             db.add(item)
 
     db.commit()
     db.close()
     return RedirectResponse(f"/order-status/{order_id}", status_code=303)
+
 
 
 

@@ -49,12 +49,12 @@
     </div>
 
     <div class="mb-3">
-      <label for="customer_name" class="form-label">Nomor HP yang bisa dihubungi</label>
+      <label for="customer_phone" class="form-label">Nomor HP yang bisa dihubungi</label>
       <input class="form-control" type="text" name="customer_phone" required>
     </div>
 
     <div class="mb-3">
-      <label for="customer_name" class="form-label">Catatan dari kamu</label>
+      <label for="customer_note" class="form-label">Catatan dari kamu</label>
       <input class="form-control" type="text" name="customer_note">
     </div>
 
@@ -70,18 +70,17 @@
         <div class="item-info">
           <h5>{{ item.name }}</h5>
           <p>Rp{{ "{:,}".format(item.price) }}</p>
+          <input type="hidden" name="item_ids" value="{{ item.id }}">
         </div>
-
-        <div class="qty-input-container">
+        <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-outline-primary btn-sm" onclick="decrementQty(this)">-</button>
           <input class="form-control qty-input" type="number" name="quantities" value="0" min="0">
           <button type="button" class="btn btn-outline-primary btn-sm" onclick="incrementQty(this)">+</button>
         </div>
-
-        <!-- Note input field for each item -->
-        <div class="note-input">
+        <!-- Note input for each item -->
+        <div class="mt-2">
           <label for="note_{{ item.id }}" class="form-label">Catatan:</label>
-          <input class="form-control" type="text" name="notes_{{ item.id }}" id="note_{{ item.id }}">
+          <input class="form-control" type="text" name="notes[{{ item.id }}]" id="note_{{ item.id }}">
         </div>
       </div>
       {% endfor %}
@@ -89,6 +88,7 @@
 
     <button class="btn btn-danger w-100 mt-3" type="submit">Submit Pesanan</button>
   </form>
+
 
   <script>
     // Decrement quantity function
