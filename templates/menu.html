@@ -14,25 +14,33 @@
       margin-bottom: 15px;
       padding: 10px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
     }
 
     .item-info {
-      flex: 1;
+      margin-bottom: 10px;
+    }
+
+    .qty-input-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
     }
 
     .qty-input {
       width: 60px;
       text-align: center;
     }
+
+    .note-input {
+      margin-top: 10px;
+    }
   </style>
 </head>
 
 <body class="p-4">
   <h2>Dapur Antar 24 Jam</h2>
-
-
 
   <form method="post" action="/order">
     <div class="mb-3">
@@ -62,20 +70,20 @@
         <div class="item-info">
           <h5>{{ item.name }}</h5>
           <p>Rp{{ "{:,}".format(item.price) }}</p>
-          <input type="hidden" name="item_ids" value="{{ item.id }}">
         </div>
-        <div class="d-flex align-items-center gap-2">
+
+        <div class="qty-input-container">
           <button type="button" class="btn btn-outline-primary btn-sm" onclick="decrementQty(this)">-</button>
           <input class="form-control qty-input" type="number" name="quantities" value="0" min="0">
           <button type="button" class="btn btn-outline-primary btn-sm" onclick="incrementQty(this)">+</button>
         </div>
+
         <!-- Note input field for each item -->
-        <div class="mt-2">
+        <div class="note-input">
           <label for="note_{{ item.id }}" class="form-label">Catatan:</label>
           <input class="form-control" type="text" name="notes_{{ item.id }}" id="note_{{ item.id }}">
         </div>
       </div>
-
       {% endfor %}
     </div>
 
