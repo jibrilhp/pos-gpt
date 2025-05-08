@@ -158,9 +158,12 @@
                 </div>
               </div>
               <div class="card-footer bg-light text-end">
+                {% set total_price = 0 %}
+                {% for item in order.items %}
+                {% set total_price = total_price + (item.menu.price * item.qty) %}
+                {% endfor %}
                 <strong>Total Item: {{ order.items|length }}</strong>
-                <strong class="ms-3">Total Harga: Rp {{ order.items|sum(attribute=lambda x: x.menu.price * x.qty)
-                  }}</strong>
+                <strong class="ms-3">Total Harga: Rp {{ total_price }}</strong>
               </div>
             </div>
           </td>
