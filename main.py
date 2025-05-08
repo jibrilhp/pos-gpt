@@ -126,9 +126,13 @@ def mark_paid(order_id: str):
 @app.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request):
     db = SessionLocal()
-    orders = db.query(Order).order_by(Order.created_at.desc()).all()
+    
+    # Eager load the related items for each order
+    orders = db.query(Order).options(joinedload(Order.items)).order_by(Order.created_at.asc()).all()
+    
     db.close()
     return templates.TemplateResponse("admin.html", {"request": request, "orders": orders})
+
 
 @app.post("/update-status/{order_id}", response_class=RedirectResponse)
 def update_status(order_id: str, status: str = Form(...)):
