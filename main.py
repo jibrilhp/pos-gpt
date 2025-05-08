@@ -105,15 +105,16 @@ async def place_order(
 @app.get("/order-status/{order_id}", response_class=HTMLResponse)
 def order_status(request: Request, order_id: str):
     db = SessionLocal()
-    
-    # Ensure that items are eagerly loaded with the order
-    order = db.query(Order).options(joinedload(Order.items).joinedload(OrderItem.menu)).filter(Order.id == order_id).first()
-    
-    # If no order found, handle it
+
+    # Eagerly load OrderItem and its related Menu items
+    order = db.query(Order).options(
+        joinedload(Order.items).joinedload(OrderItem.menu)  # Eager load menu
+    ).filter(Order.id == order_id).first()
+
     if not order:
         db.close()
         return HTMLResponse("Order not found", status_code=404)
-    
+
     db.close()
     return templates.TemplateResponse("order_status.html", {"request": request, "order": order, "items": order.items})
 
@@ -160,9 +161,11 @@ def update_status(order_id: str, status: str = Form(...)):
 def print_receipt(request: Request, order_id: str):
     db = SessionLocal()
 
-    # Ensure that items are eagerly loaded with the order
-    order = db.query(Order).options(joinedload(Order.items).joinedload(OrderItem.menu)).filter(Order.id == order_id).first()
-    
+    # Eagerly load OrderItem and its related Menu items
+    order = db.query(Order).options(
+        joinedload(Order.items).joinedload(OrderItem.menu)  # Eager load menu
+    ).filter(Order.id == order_id).first()
+
     if not order:
         db.close()
         return HTMLResponse("Order not found", status_code=404)
