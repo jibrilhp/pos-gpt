@@ -19,6 +19,14 @@
     td {
       white-space: nowrap;
     }
+
+    .order-details {
+      display: none;
+    }
+
+    .expand-btn {
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -26,8 +34,7 @@
   <h3 class="mb-4 text-center">📋 Admin Dashboard</h3>
 
   <!-- Search -->
-  <input id="searchInput" class="form-control search-box" type="text" placeholder="Cari nama / HP / catatan..."
-    onkeyup="filterTable()">
+  <input id="searchInput" class="form-control search-box" type="text" placeholder="Cari nama / HP / catatan..." onkeyup="filterTable()">
 
   <!-- Table -->
   <div class="table-responsive">
@@ -39,19 +46,24 @@
           <th>No. HP</th>
           <th>Catatan</th>
           <th>Status</th>
+          <th>Created At</th>
           <th>Update Pembayaran</th>
           <th>Update Status</th>
           <th>Cetak</th>
         </tr>
       </thead>
       <tbody>
-        {% for order in orders %}
+        {% for order in orders|sort(attribute='created_at', reverse=False) %}
         <tr>
-          <td>{{ order.id }}</td>
+          <td>
+            <button class="expand-btn btn btn-sm btn-info" onclick="toggleDetails('{{ order.id }}')">+</button>
+            {{ order.id }}
+          </td>
           <td>{{ order.customer }}</td>
           <td>{{ order.phone }}</td>
           <td>{{ order.note }}</td>
           <td><span class="badge bg-secondary">{{ order.status }}</span></td>
+          <td>{{ order.created_at }}</td>  <!-- Created At Column -->
           <td>
             <form method="post" action="/mark-paid/{{ order.id }}" class="d-inline">
               {% if not order.is_paid %}
@@ -60,7 +72,6 @@
               <span class="badge bg-success">Sudah Dibayar</span>
               {% endif %}
             </form>
-
           </td>
           <td>
             <form method="post" action="/update-status/{{ order.id }}">
@@ -80,7 +91,30 @@
               🖨️ Cetak Struk
             </a>
           </td>
+        </tr>
 
+        <!-- Expandable Details Row -->
+        <tr class="order-details" id="details-{{ order.id }}">
+          <td colspan="8">
+            <table class="table table-sm table-bordered">
+              <thead class="table-dark">
+                <tr>
+                  <th>Menu</th>
+                  <th>Qty</th>
+                  <th>Catatan Menu</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in order.items %}
+                <tr>
+                  <td>{{ item.menu.name }}</td>
+                  <td>{{ item.qty }}</td>
+                  <td>{{ item.note }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -95,6 +129,16 @@
         const text = row.innerText.toLowerCase();
         row.style.display = text.includes(input) ? "" : "none";
       });
+    }
+
+    // Function to toggle order details visibility
+    function toggleDetails(orderId) {
+      const detailsRow = document.getElementById('details-' + orderId);
+      if (detailsRow.style.display === "none" || detailsRow.style.display === "") {
+        detailsRow.style.display = "table-row";
+      } else {
+        detailsRow.style.display = "none";
+      }
     }
   </script>
 </body>
