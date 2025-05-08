@@ -34,7 +34,8 @@
   <h3 class="mb-4 text-center">📋 Admin Dashboard</h3>
 
   <!-- Search -->
-  <input id="searchInput" class="form-control search-box" type="text" placeholder="Cari nama / HP / catatan..." onkeyup="filterTable()">
+  <input id="searchInput" class="form-control search-box" type="text" placeholder="Cari nama / HP / catatan..."
+    onkeyup="filterTable()">
 
   <!-- Table -->
   <div class="table-responsive">
@@ -55,15 +56,12 @@
       <tbody>
         {% for order in orders|sort(attribute='created_at', reverse=False) %}
         <tr>
-          <td>
-            <button class="expand-btn btn btn-sm btn-info" onclick="toggleDetails('{{ order.id }}')">+</button>
-            {{ order.id }}
-          </td>
+          <td>{{ order.id }}</td>
           <td>{{ order.customer }}</td>
           <td>{{ order.phone }}</td>
           <td>{{ order.note }}</td>
           <td><span class="badge bg-secondary">{{ order.status }}</span></td>
-          <td>{{ order.created_at }}</td>  <!-- Created At Column -->
+          <td>{{ order.created_at }}</td>
           <td>
             <form method="post" action="/mark-paid/{{ order.id }}" class="d-inline">
               {% if not order.is_paid %}
@@ -117,6 +115,7 @@
           </td>
         </tr>
         {% endfor %}
+
       </tbody>
     </table>
   </div>
