@@ -105,10 +105,18 @@ async def place_order(
 @app.get("/order-status/{order_id}", response_class=HTMLResponse)
 def order_status(request: Request, order_id: str):
     db = SessionLocal()
-    order = db.query(Order).filter(Order.id == order_id).first()
-    items = db.query(OrderItem).options(joinedload(OrderItem.menu)).filter(OrderItem.order_id == order_id).all()
+    
+    # Ensure that items are eagerly loaded with the order
+    order = db.query(Order).options(joinedload(Order.items).joinedload(OrderItem.menu)).filter(Order.id == order_id).first()
+    
+    # If no order found, handle it
+    if not order:
+        db.close()
+        return HTMLResponse("Order not found", status_code=404)
+    
     db.close()
-    return templates.TemplateResponse("order_status.html", {"request": request, "order": order, "items": items})
+    return templates.TemplateResponse("order_status.html", {"request": request, "order": order, "items": order.items})
+
 
 @app.post("/mark-paid/{order_id}", response_class=RedirectResponse)
 def mark_paid(order_id: str):
