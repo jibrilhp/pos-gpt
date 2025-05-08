@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Boolean
@@ -128,7 +128,21 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         joinedload(Order.items).joinedload(OrderItem.menu)
     ).order_by(Order.created_at.asc()).all()
     
+    # Calculate total price for each order
+    for order in orders:
+        order.total = sum(item.menu.price * item.qty for item in order.items)
+    
     return templates.TemplateResponse("admin.html", {"request": request, "orders": orders})
+
+@app.get("/api/new-orders", response_class=JSONResponse)
+def check_new_orders(db: Session = Depends(get_db)):
+    # Find orders that are not paid and are in "Menunggu Konfirmasi" status
+    new_orders = db.query(Order).filter(
+        Order.is_paid == False,
+        Order.status == "Menunggu Konfirmasi"
+    ).count()
+    
+    return {"new_orders": new_orders > 0}
 
 @app.post("/update-status/{order_id}", response_class=RedirectResponse)
 def update_status(order_id: str, status: str = Form(...), db: Session = Depends(get_db)):
