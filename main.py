@@ -171,11 +171,12 @@ def initialize_database(db: Session):
         db.add_all(default_categories)
         db.commit()
 
-@app.on_event("startup")
+app.on_event("startup")
 async def startup_event():
-    ensure_placeholder_exi00020101021126650013ID.CO.BCA.WWW011893600014000299749202150008850029974920303UKE51440014ID.CO.QRIS.WWW0215ID10254011522240303UKE5204581453033605802ID5918DAPUR ANTAR 24 JAM6015JAKARTA SELATAN61051263062070703A0163042B58lter(Menu.is_available == True).all()
-    categories = db.query(Category).order_by(Category.display_order).all()
-    return templates.TemplateResponse("menu.html", {"request": request, "menu": menu, "categories": categories})
+    ensure_placeholder_exists()
+    db = SessionLocal()
+    initialize_database(db)
+    db.close()
 
 @app.post("/order", response_class=HTMLResponse)
 async def place_order(
@@ -250,7 +251,7 @@ def order_status(request: Request, order_id: str, partial: bool = False, db: Ses
     for item in order.items:
         total_price += item.menu.price * item.qty
     
-    string_to_qrcode_base64 = convert_qris_to_dynamic(convert_qris_to_dynamic(QRIS_STATIC, total_price)
+    string_to_qrcode_base64 = convert_qris_to_dynamic(convert_qris_to_dynamic(QRIS_STATIC, total_price))
     
 
     return templates.TemplateResponse("order_status.html", {"request": request, "order": order, "items": order.items, "qrcode": string_to_qrcode_base64})
