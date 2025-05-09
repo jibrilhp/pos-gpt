@@ -2,115 +2,563 @@
 <html>
 
 <head>
-  <title>Menu</title>
+  <title>Menu Dapur Antar 24 Jam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
   <style>
-    .menu-card {
-      border: 1px solid #ddd;
-      border-radius: 8px;
+    :root {
+      --primary-color: #FF5252;
+      --secondary-color: #FFC107;
+      --light-gray: #f8f9fa;
+    }
+    
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f5f5;
+      padding-bottom: 70px; /* Space for fixed bottom button */
+    }
+    
+    .header {
+      background-color: white;
+      padding: 15px 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .header-title {
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 0;
+    }
+    
+    .category-nav {
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      background-color: white;
+      padding: 10px 0;
+      position: sticky;
+      top: 60px;
+      z-index: 900;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .category-btn {
+      margin-right: 8px;
+      border-radius: 20px;
+      padding: 6px 15px;
+      background-color: var(--light-gray);
+      border: none;
+      color: #555;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    .category-btn.active {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .menu-section {
+      margin-top: 20px;
+      padding-top: 15px;
+    }
+    
+    .category-title {
+      font-weight: 600;
       margin-bottom: 15px;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
+      padding-bottom: 5px;
+      border-bottom: 2px solid var(--primary-color);
+      display: inline-block;
     }
-
-    .item-info {
-      margin-bottom: 10px;
+    
+    .menu-card {
+      background-color: white;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
     }
-
-    .qty-input-container {
+    
+    .menu-img-container {
+      height: 140px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .menu-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+    
+    .menu-card:hover .menu-img {
+      transform: scale(1.05);
+    }
+    
+    .menu-card .menu-info {
+      padding: 15px;
+    }
+    
+    .menu-name {
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    
+    .menu-price {
+      color: var(--primary-color);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    
+    .qty-control {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .qty-input {
-      width: 60px;
-      text-align: center;
-    }
-
-    .note-input {
       margin-top: 10px;
+    }
+    
+    .qty-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .qty-btn:hover {
+      background-color: var(--light-gray);
+    }
+    
+    .qty-input {
+      width: 45px;
+      text-align: center;
+      border: none;
+      font-weight: 600;
+      background: transparent;
+    }
+    
+    .note-collapse {
+      margin-top: 10px;
+    }
+    
+    .note-btn {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .note-btn i {
+      transition: transform 0.3s;
+    }
+    
+    .note-btn[aria-expanded="true"] i {
+      transform: rotate(180deg);
+    }
+    
+    .note-input {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 10px;
+    }
+    
+    .search-container {
+      position: relative;
+      margin: 15px 0;
+    }
+    
+    .search-input {
+      border-radius: 25px;
+      padding-left: 40px;
+      border: 1px solid #ddd;
+    }
+    
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #999;
+    }
+    
+    .order-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 15px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+    
+    .submit-btn {
+      background-color: var(--primary-color);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      padding: 12px;
+    }
+    
+    .submit-btn:hover, .submit-btn:focus {
+      background-color: #E04545;
+    }
+    
+    .item-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: var(--secondary-color);
+      color: #333;
+      font-weight: 600;
+      font-size: 0.8rem;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+    
+    /* Customer info modal */
+    .modal-header {
+      background-color: var(--primary-color);
+      color: white;
     }
   </style>
 </head>
 
-<body class="p-4">
-  <h2>Dapur Antar 24 Jam</h2>
-
-  <form method="post" action="/order">
-    <div class="mb-3">
-      <label for="customer_name" class="form-label">Nama Customer</label>
-      <input class="form-control" type="text" name="customer_name" required>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="container d-flex justify-content-between align-items-center">
+      <h3 class="header-title">Dapur Antar 24 Jam</h3>
+      <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#customerInfoModal">
+        <i class="bi bi-person-fill"></i> Info Pengiriman
+      </button>
     </div>
+  </div>
 
-    <div class="mb-3">
-      <label for="customer_phone" class="form-label">Nomor HP yang bisa dihubungi</label>
-      <input class="form-control" type="text" name="customer_phone" required>
-    </div>
-
-    <div class="mb-3">
-      <label for="customer_note" class="form-label">Catatan dari kamu</label>
-      <input class="form-control" type="text" name="customer_note">
-    </div>
-
-    <div id="menuContainer">
-      <!-- Search box -->
-      <div class="mb-3 position-relative">
-        <input id="searchBox" class="form-control ps-5" type="text" placeholder="Cari menu..." onkeyup="filterMenu()">
-        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-      </div>
-
-      {% for item in menu %}
-      <div class="menu-card" data-name="{{ item.name | lower }}">
-        <div class="item-info">
-          <h5>{{ item.name }}</h5>
-          <p>Rp{{ "{:,}".format(item.price) }}</p>
-          <input type="hidden" name="item_ids" value="{{ item.id }}">
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <button type="button" class="btn btn-outline-primary btn-sm" onclick="decrementQty(this)">-</button>
-          <input class="form-control qty-input" type="number" name="quantities" value="0" min="0">
-          <button type="button" class="btn btn-outline-primary btn-sm" onclick="incrementQty(this)">+</button>
-        </div>
-        <!-- Note input for each item -->
-        <div class="mt-2">
-          <label for="note_{{ item.id }}" class="form-label">Catatan:</label>
-          <input class="form-control" type="text" name="notes[{{ item.id }}]" id="note_{{ item.id }}">
-        </div>
-      </div>
+  <!-- Category Navigation -->
+  <div class="category-nav">
+    <div class="container">
+      <button class="category-btn active" data-category="all">Semua Menu</button>
+      {% for category in categories %}
+      <button class="category-btn" data-category="{{ category.id }}">{{ category.name }}</button>
       {% endfor %}
     </div>
+  </div>
 
-    <button class="btn btn-danger w-100 mt-3" type="submit">Submit Pesanan</button>
-  </form>
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Search box -->
+    <div class="search-container">
+      <input id="searchBox" class="form-control search-input" type="text" placeholder="Cari menu...">
+      <i class="bi bi-search search-icon"></i>
+    </div>
+    
+    <form id="orderForm" method="post" action="/order">
+      <!-- All menu items will be shown by default -->
+      <div class="menu-section" id="all-section">
+        <h4 class="category-title">Semua Menu</h4>
+        <div class="row" id="all-menu-container">
+          {% for item in menu %}
+          <div class="col-md-6 col-lg-4 menu-item" data-category="{{ item.category_id }}" data-name="{{ item.name | lower }}">
+            <div class="menu-card">
+              <div class="menu-img-container">
+                {% if item.image_url %}
+                <img src="{{ item.image_url }}" class="menu-img" alt="{{ item.name }}">
+                {% else %}
+                <img src="/static/placeholder-food.jpg" class="menu-img" alt="Food placeholder">
+                {% endif %}
+                
+                {% if item.is_popular %}
+                <div class="item-badge">Populer</div>
+                {% endif %}
+              </div>
+              <div class="menu-info">
+                <h5 class="menu-name">{{ item.name }}</h5>
+                <div class="menu-price">Rp{{ "{:,}".format(item.price) }}</div>
+                <input type="hidden" name="item_ids" value="{{ item.id }}">
+                
+                <div class="qty-control">
+                  <button type="button" class="qty-btn minus-btn" onclick="decrementQty(this)">-</button>
+                  <input class="qty-input" type="number" name="quantities" value="0" min="0" readonly>
+                  <button type="button" class="qty-btn plus-btn" onclick="incrementQty(this)">+</button>
+                </div>
+                
+                <div class="note-collapse">
+                  <a class="note-btn collapsed" data-bs-toggle="collapse" href="#note_collapse_{{ item.id }}">
+                    Tambah catatan <i class="bi bi-chevron-down ms-1"></i>
+                  </a>
+                  <div class="collapse" id="note_collapse_{{ item.id }}">
+                    <input class="form-control note-input" type="text" name="notes[{{ item.id }}]" placeholder="Contoh: tidak pedas, tanpa bawang, dll">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      
+      <!-- Category Sections -->
+      {% for category in categories %}
+      <div class="menu-section d-none" id="category-{{ category.id }}-section">
+        <h4 class="category-title">{{ category.name }}</h4>
+        <div class="row" id="category-{{ category.id }}-container"></div>
+      </div>
+      {% endfor %}
+    
+      <!-- Fixed Order Button -->
+      <div class="order-footer">
+        <div class="container">
+          <button id="submitOrder" class="btn submit-btn w-100 text-white" type="button" onclick="validateAndSubmit()">
+            <i class="bi bi-cart-fill me-2"></i> Pesan Sekarang (<span id="itemCount">0</span> item)
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Customer Info Modal -->
+  <div class="modal fade" id="customerInfoModal" tabindex="-1" aria-labelledby="customerInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="customerInfoModalLabel">Informasi Pengiriman</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="customer_name" class="form-label">Nama</label>
+            <input class="form-control" type="text" id="customer_name" name="customer_name" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="customer_phone" class="form-label">Nomor HP</label>
+            <input class="form-control" type="tel" id="customer_phone" name="customer_phone" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="customer_address" class="form-label">Alamat Pengiriman</label>
+            <textarea class="form-control" id="customer_address" name="customer_address" rows="2" required></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <label for="customer_note" class="form-label">Catatan Tambahan</label>
+            <input class="form-control" type="text" id="customer_note" name="customer_note" placeholder="Unit/Lantai/Patokan">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+          <button type="button" class="btn btn-primary" onclick="saveCustomerInfo()">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // Track total selected items
+    let totalItems = 0;
+    let customerInfoComplete = false;
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize search functionality
+      document.getElementById('searchBox').addEventListener('keyup', filterMenu);
+      
+      // Initialize category buttons
+      const categoryBtns = document.querySelectorAll('.category-btn');
+      categoryBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remove active class from all buttons
+          categoryBtns.forEach(b => b.classList.remove('active'));
+          // Add active class to clicked button
+          this.classList.add('active');
+          
+          // Hide all menu sections
+          document.querySelectorAll('.menu-section').forEach(section => {
+            section.classList.add('d-none');
+          });
+          
+          const category = this.getAttribute('data-category');
+          if (category === 'all') {
+            // Show all menu section
+            document.getElementById('all-section').classList.remove('d-none');
+          } else {
+            // Show specific category section
+            document.getElementById(`category-${category}-section`).classList.remove('d-none');
+            
+            // Move items to category container if not already done
+            const categoryContainer = document.getElementById(`category-${category}-container`);
+            if (categoryContainer.children.length === 0) {
+              const items = document.querySelectorAll(`.menu-item[data-category="${category}"]`);
+              items.forEach(item => {
+                const clone = item.cloneNode(true);
+                categoryContainer.appendChild(clone);
+              });
+            }
+          }
+        });
+      });
+      
+      // Check for saved customer info
+      checkSavedCustomerInfo();
+    });
+    
     // Decrement quantity function
     function decrementQty(button) {
-      const input = button.parentElement.querySelector('input[type=number]');
-      if (input.value > 0) {
+      const input = button.parentElement.querySelector('.qty-input');
+      if (parseInt(input.value) > 0) {
         input.value = parseInt(input.value) - 1;
+        updateTotalItems();
       }
     }
 
+    // Increment quantity function
     function incrementQty(button) {
-      const input = button.parentElement.querySelector('input[type=number]');
+      const input = button.parentElement.querySelector('.qty-input');
       input.value = parseInt(input.value) + 1;
+      updateTotalItems();
+    }
+    
+    // Update total items count
+    function updateTotalItems() {
+      totalItems = 0;
+      document.querySelectorAll('.qty-input').forEach(input => {
+        totalItems += parseInt(input.value);
+      });
+      document.getElementById('itemCount').textContent = totalItems;
+      
+      // Update submit button state
+      const submitBtn = document.getElementById('submitOrder');
+      if (totalItems > 0) {
+        submitBtn.classList.remove('btn-secondary');
+        submitBtn.classList.add('submit-btn');
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.classList.remove('submit-btn');
+        submitBtn.classList.add('btn-secondary');
+        submitBtn.disabled = true;
+      }
     }
 
+    // Filter menu by search query
     function filterMenu() {
-      const query = document.getElementById("searchBox").value.toLowerCase();
-      const cards = document.querySelectorAll(".menu-card");
+      const query = document.getElementById('searchBox').value.toLowerCase();
+      const cards = document.querySelectorAll('.menu-item');
+      
       cards.forEach(card => {
-        const name = card.getAttribute("data-name");
-        card.style.display = name.includes(query) ? "flex" : "none";
+        const name = card.getAttribute('data-name');
+        if (name.includes(query)) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
       });
+    }
+    
+    // Save customer info
+    function saveCustomerInfo() {
+      const name = document.getElementById('customer_name').value;
+      const phone = document.getElementById('customer_phone').value;
+      const address = document.getElementById('customer_address').value;
+      const note = document.getElementById('customer_note').value;
+      
+      if (name && phone && address) {
+        // Save to local storage
+        localStorage.setItem('customer_name', name);
+        localStorage.setItem('customer_phone', phone);
+        localStorage.setItem('customer_address', address);
+        localStorage.setItem('customer_note', note);
+        
+        customerInfoComplete = true;
+        
+        // Add hidden inputs to form
+        const form = document.getElementById('orderForm');
+        appendHiddenInput(form, 'customer_name', name);
+        appendHiddenInput(form, 'customer_phone', phone);
+        appendHiddenInput(form, 'customer_address', address);
+        appendHiddenInput(form, 'customer_note', note);
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('customerInfoModal'));
+        modal.hide();
+      } else {
+        alert('Mohon lengkapi nama, nomor HP, dan alamat pengiriman.');
+      }
+    }
+    
+    // Check for saved customer info
+    function checkSavedCustomerInfo() {
+      const name = localStorage.getItem('customer_name');
+      const phone = localStorage.getItem('customer_phone');
+      const address = localStorage.getItem('customer_address');
+      const note = localStorage.getItem('customer_note');
+      
+      if (name && phone && address) {
+        document.getElementById('customer_name').value = name;
+        document.getElementById('customer_phone').value = phone;
+        document.getElementById('customer_address').value = address;
+        document.getElementById('customer_note').value = note || '';
+        
+        customerInfoComplete = true;
+        
+        // Add hidden inputs to form
+        const form = document.getElementById('orderForm');
+        appendHiddenInput(form, 'customer_name', name);
+        appendHiddenInput(form, 'customer_phone', phone);
+        appendHiddenInput(form, 'customer_address', address);
+        appendHiddenInput(form, 'customer_note', note || '');
+      }
+    }
+    
+    // Helper to append hidden input
+    function appendHiddenInput(form, name, value) {
+      // Remove if exists
+      const existing = form.querySelector(`input[name="${name}"][type="hidden"]`);
+      if (existing) existing.remove();
+      
+      // Create new
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    }
+    
+    // Validate and submit form
+    function validateAndSubmit() {
+      if (totalItems === 0) {
+        alert('Silakan pilih menu terlebih dahulu.');
+        return;
+      }
+      
+      if (!customerInfoComplete) {
+        // Show customer info modal
+        const modal = new bootstrap.Modal(document.getElementById('customerInfoModal'));
+        modal.show();
+        return;
+      }
+      
+      // Submit form
+      document.getElementById('orderForm').submit();
     }
   </script>
 </body>

@@ -35,27 +35,82 @@
       margin-top: 1.5rem;
       padding-top: 1rem;
     }
+    
+    .refresh-timer {
+      color: #6c757d;
+      font-size: 0.9rem;
+      text-align: center;
+    }
   </style>
 
   <script>
-    setInterval(() => {
-      fetch(window.location.href)
-        .then(response => response.text())
-        .then(html => {
-          document.open();
-          document.write(html);
-          document.close();
-        });
-    }, 10000);
-
-    function getElapsedTime(createdAt) {
-      const created = new Date(createdAt);
-      const now = new Date();
-      const seconds = Math.floor((now - created) / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const remaining = 5 - minutes;
-      return remaining > 0 ? `(${remaining}:${59 - (seconds % 60)})` : '';
+    // Store initial order data
+    let orderData = {
+      status: "{{ order.status }}",
+      created_at: "{{ order.created_at }}",
+      is_paid: {{ order.is_paid|lower }}
+    };
+    
+    // Time constants
+    const REFRESH_INTERVAL = 30000; // Changed from 10s to 30s to reduce server load
+    let nextRefreshTime = Date.now() + REFRESH_INTERVAL;
+    let timerInterval;
+    
+    // Convert server time to UTC+7
+    function formatDateUTC7(dateString) {
+      const date = new Date(dateString);
+      // Create date in UTC+7 timezone
+      const options = { 
+        timeZone: 'Asia/Jakarta',
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+      };
+      return new Intl.DateTimeFormat('id-ID', options).format(date);
     }
+    
+    // Function to update timer display
+    function updateTimerDisplay() {
+      const remainingTime = Math.ceil((nextRefreshTime - Date.now()) / 1000);
+      if (remainingTime <= 0) {
+        document.getElementById('refresh-countdown').textContent = "Memperbarui...";
+        return;
+      }
+      document.getElementById('refresh-countdown').textContent = `${remainingTime}`;
+    }
+    
+    // Initialize timer after page load
+    window.addEventListener('load', function() {
+      timerInterval = setInterval(updateTimerDisplay, 1000);
+      updateTimerDisplay();
+    });
+    
+    // Smart refresh function that only checks for changes
+    function smartRefresh() {
+      fetch(window.location.href + '?partial=true')
+        .then(response => response.json())
+        .then(data => {
+          // Only refresh page if order status or payment status has changed
+          if (data.status !== orderData.status || data.is_paid !== orderData.is_paid) {
+            window.location.reload();
+          } else {
+            // Reset timer for next refresh
+            nextRefreshTime = Date.now() + REFRESH_INTERVAL;
+            updateTimerDisplay();
+          }
+        })
+        .catch(error => {
+          // If error in fetching partial data, fallback to full page refresh
+          console.error('Error fetching update:', error);
+          setTimeout(() => window.location.reload(), REFRESH_INTERVAL);
+        });
+    }
+    
+    // Set up refresh interval
+    setInterval(smartRefresh, REFRESH_INTERVAL);
   </script>
 </head>
 
@@ -66,7 +121,6 @@
     <p class="text-danger mt-2">Silakan bayar melalui QRIS ini.<br>Admin akan menandai setelah pembayaran diterima.</p>
   </div>
   {% endif %}
-
 
   <img src="/static/status-waiting.png" alt="Status Ilustrasi" class="status-img">
 
@@ -80,7 +134,7 @@
     {% elif order.status == "Diantar" %}
       Pesanan sedang diantar ke tujuan
     {% elif order.status == "Selesai" %}
-      Pesanan selesai – Terima kasih!
+      Pesanan selesai diantar ke Kamar/Tujuan – Terima kasih!
     {% else %}
       Status pesanan tidak dikenal
     {% endif %}
@@ -88,10 +142,15 @@
   
   <div class="status-subtext">
     Staff resto akan segera mengkonfirmasi pesanan Anda
-    <br><span style="color:red;">(auto refresh setiap 10 detik)</span>
+    <br>
+    <span class="refresh-timer">Memperbarui dalam <span id="refresh-countdown">30</span> detik</span>
   </div>
 
-  <p class="text-center">Pesanan dibuat<br><strong>{{ order.created_at.strftime('%-d %B %Y pukul %H:%M') }}</strong></p>
+  <p class="text-center">Pesanan dibuat<br><strong id="created-time">
+    <script>
+      document.write(formatDateUTC7("{{ order.created_at }}"));
+    </script>
+  </strong></p>
 
   <div class="order-details">
     <h5>Pesanan Anda</h5>
