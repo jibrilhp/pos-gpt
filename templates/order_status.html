@@ -162,7 +162,7 @@
 
   {% if not order.is_paid %}
   <div class="text-center">
-    <img src="data:image/png;base64, {{ qrcode }}" alt="QRIS" class="img-fluid" style="max-width: 200px;">
+    <img src="{{ qrcode }}" alt="QRIS" class="img-fluid" style="max-width: 200px;">
     <p class="text-danger mt-2">Silakan bayar melalui QRIS ini.<br>Admin akan menandai setelah pembayaran diterima.</p>
   </div>
   {% endif %}
