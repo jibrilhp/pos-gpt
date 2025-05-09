@@ -171,12 +171,26 @@ def initialize_database(db: Session):
         db.add_all(default_categories)
         db.commit()
 
-app.on_event("startup")
+# Dependency to get the database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@app.on_event("startup")
 async def startup_event():
     ensure_placeholder_exists()
     db = SessionLocal()
     initialize_database(db)
     db.close()
+    
+@app.get("/", response_class=HTMLResponse)
+def menu_page(request: Request, db: Session = Depends(get_db)):
+    menu = db.query(Menu).all()
+    return templates.TemplateResponse("menu.html", {"request": request, "menu": menu})
 
 @app.post("/order", response_class=HTMLResponse)
 async def place_order(
