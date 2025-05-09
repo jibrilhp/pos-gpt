@@ -250,7 +250,7 @@ def order_status(request: Request, order_id: str, partial: bool = False, db: Ses
     for item in order.items:
         total_price += item.menu.price * item.qty
     
-    string_to_qrcode_base64 = convert_qris_to_dynamic(convert_qris_to_dynamic(QRIS_STATIC, total_price))
+    string_to_qrcode_base64 = convert_qris_to_dynamic(convert_qris_to_dynamic(QRIS_STATIC, total_price)
     
 
     return templates.TemplateResponse("order_status.html", {"request": request, "order": order, "items": order.items, "qrcode": string_to_qrcode_base64})
