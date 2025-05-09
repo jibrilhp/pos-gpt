@@ -123,6 +123,20 @@ def mark_paid(order_id: str, db: Session = Depends(get_db)):
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
+    # Get date filter from query parameter, default to today
+    date_filter = request.query_params.get('date', datetime.now().strftime('%Y-%m-%d'))
+    
+    try:
+        filter_date = datetime.strptime(date_filter, '%Y-%m-%d')
+        start_date = datetime(filter_date.year, filter_date.month, filter_date.day, 0, 0, 0)
+        end_date = datetime(filter_date.year, filter_date.month, filter_date.day, 23, 59, 59)
+    except ValueError:
+        # Handle invalid date format, default to today
+        today = datetime.now()
+        start_date = datetime(today.year, today.month, today.day, 0, 0, 0)
+        end_date = datetime(today.year, today.month, today.day, 23, 59, 59)
+        date_filter = today.strftime('%Y-%m-%d')
+    
     # Check for orders that need to be auto-cancelled (not paid after 10 minutes)
     unpaid_orders = db.query(Order).filter(
         Order.is_paid == False,
@@ -142,11 +156,45 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         joinedload(Order.items).joinedload(OrderItem.menu)
     ).order_by(Order.created_at.asc()).all()
     
-    # Calculate total price for each order
+    # Filter orders for the recap section
+    filtered_orders = [
+        order for order in orders 
+        if start_date <= order.created_at <= end_date
+    ]
+    
+    # Calculate total price for each order and summary stats
+    total_sales = 0
+    total_cancelled = 0
+    successful_orders = 0
+    cancelled_orders = 0
+    
     for order in orders:
         order.total = sum(item.menu.price * item.qty for item in order.items)
+        
+        # For orders in the selected date
+        if order in filtered_orders:
+            if order.status == "Cancelled":
+                total_cancelled += order.total
+                cancelled_orders += 1
+            elif order.status == "Selesai" and order.is_paid:
+                total_sales += order.total
+                successful_orders += 1
     
-    return templates.TemplateResponse("admin.html", {"request": request, "orders": orders})
+    # Prepare recap data
+    recap = {
+        'date': date_filter,
+        'total_sales': total_sales,
+        'total_cancelled': total_cancelled,
+        'successful_orders': successful_orders,
+        'cancelled_orders': cancelled_orders,
+        'filtered_orders': filtered_orders
+    }
+    
+    return templates.TemplateResponse("admin.html", {
+        "request": request, 
+        "orders": orders,
+        "recap": recap
+    })
 
 @app.get("/api/new-orders", response_class=JSONResponse)
 def check_new_orders(db: Session = Depends(get_db)):
