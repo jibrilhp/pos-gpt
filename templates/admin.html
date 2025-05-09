@@ -356,9 +356,9 @@
                   <option value="Menunggu Konfirmasi" {% if order.status=='Menunggu Konfirmasi' %}selected{% endif %}>
                     Menunggu Konfirmasi</option>
                   <option value="Diproses" {% if order.status=='Diproses' %}selected{% endif %}>Diproses</option>
-                  <option value="Siap" {% if order.status=='Siap' %}selected{% endif %}>Siap</option>
+                  <option value="Siap" {% if order.status=='Siap' %}selected{% endif %}>Diantar</option>
                   <option value="Selesai" {% if order.status=='Selesai' %}selected{% endif %}>Selesai</option>
-                  <option value="Cancelled" {% if order.status=='Cancelled' %}selected{% endif %}>Cancelled</option>
+                  <option value="Cancelled" {% if order.status=='Cancelled' %}selected{% endif %}>Dibatalkan</option>
                 </select>
                 <button type="submit" class="btn btn-primary">Update</button>
               </form>

@@ -115,12 +115,7 @@
 </head>
 
 <body>
-  {% if not order.is_paid %}
-  <div class="text-center">
-    <img src="/static/qris.png" alt="QRIS" class="img-fluid" style="max-width: 200px;">
-    <p class="text-danger mt-2">Silakan bayar melalui QRIS ini.<br>Admin akan menandai setelah pembayaran diterima.</p>
-  </div>
-  {% endif %}
+  
 
   <img src="/static/status-waiting.png" alt="Status Ilustrasi" class="status-img">
 
@@ -164,6 +159,13 @@
       {% endfor %}
     </ul>
   </div>
+
+  {% if not order.is_paid %}
+  <div class="text-center">
+    <img src="data:image/png;base64, {{ qrcode }}" alt="QRIS" class="img-fluid" style="max-width: 200px;">
+    <p class="text-danger mt-2">Silakan bayar melalui QRIS ini.<br>Admin akan menandai setelah pembayaran diterima.</p>
+  </div>
+  {% endif %}
 </body>
 
 </html>
