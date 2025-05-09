@@ -87,7 +87,7 @@
               </form>
               {% endif %}
             </div>
-
+            
             {% if not order.is_paid and order.status != 'Cancelled' %}
             <div class="countdown" data-created="{{ order.created_at.timestamp() }}">
               Waktu tersisa: <span class="time-remaining"></span>
@@ -179,10 +179,10 @@
         const createdDate = new Date(createdTimestamp * 1000);
         const expiryDate = new Date(createdDate.getTime() + 10 * 60 * 1000); // 10 minutes
         const now = new Date();
-
+        
         // Time difference in seconds
         let timeLeft = Math.floor((expiryDate - now) / 1000);
-
+        
         if (timeLeft <= 0) {
           countdown.querySelector('.time-remaining').textContent = "Pesanan akan dibatalkan...";
           setTimeout(() => {
@@ -191,7 +191,7 @@
         } else {
           const minutes = Math.floor(timeLeft / 60);
           const seconds = timeLeft % 60;
-          countdown.querySelector('.time-remaining').textContent =
+          countdown.querySelector('.time-remaining').textContent = 
             `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
         }
       });
@@ -202,7 +202,7 @@
     updateCountdowns();
     setInterval(checkForNewOrders, 5000);
     setInterval(updateCountdowns, 1000);
-
+    
     // Set up a timer to refresh the page every 30 seconds
     setTimeout(function () {
       window.location.reload();
