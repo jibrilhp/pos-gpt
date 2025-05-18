@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from database import SessionLocal
 from models import Order, OrderItem
 from fastapi.templating import Jinja2Templates
+import uuid
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -108,3 +109,31 @@ def check_new_orders(db: Session = Depends(get_db)):
     ).count()
 
     return {"new_orders": new_orders > 0}
+
+@router.post("/api/n8n-order", response_class=JSONResponse)
+def create_order_from_n8n(data: list[dict], db: Session = Depends(get_db)):
+    if not data:
+        return JSONResponse(content={"error": "No order data received"}, status_code=400)
+
+    user_id = data[0].get("user_id")
+    order_id = str(uuid.uuid4())[:8]
+    order = Order(
+        id=order_id,
+        customer=f"User {user_id}",
+        phone="-",
+        address="From n8n",
+        note="Generated via API",
+        status="Menunggu Konfirmasi"
+    )
+    db.add(order)
+
+    for entry in data:
+        menu_id = entry.get("id")
+        qty = entry.get("qty", 1)
+        note = entry.get("notes", "")
+        if menu_id:
+            item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=note)
+            db.add(item)
+
+    db.commit()
+    return {"order_id": order_id, "status": "created"}
