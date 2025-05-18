@@ -113,8 +113,8 @@ def check_new_orders(db: Session = Depends(get_db)):
 @router.post("/api/n8n-order", response_class=JSONResponse)
 def create_order_from_n8n(body: dict, db: Session = Depends(get_db)):
     try:
-        data = body.get("body", {}).get("data", [])
-        chat_info = body.get("body", {}).get("chat_information", {})
+        data = body.get("data", [])
+        chat_info = body.get("chat_information", {})
     except Exception:
         return JSONResponse(content={"error": "Invalid request format"}, status_code=400)
 
