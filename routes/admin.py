@@ -111,29 +111,41 @@ def check_new_orders(db: Session = Depends(get_db)):
     return {"new_orders": new_orders > 0}
 
 @router.post("/api/n8n-order", response_class=JSONResponse)
-def create_order_from_n8n(data: list[dict], db: Session = Depends(get_db)):
+def create_order_from_n8n(body: dict, db: Session = Depends(get_db)):
+    try:
+        data = body.get("body", {}).get("data", [])
+        chat_info = body.get("body", {}).get("chat_information", {})
+    except Exception:
+        return JSONResponse(content={"error": "Invalid request format"}, status_code=400)
+
     if not data:
         return JSONResponse(content={"error": "No order data received"}, status_code=400)
 
-    user_id = data[0].get("user_id")
+    user_id = chat_info.get("id", "unknown")
+    customer_name = chat_info.get("first_name", "User")
+    username = chat_info.get("username", "-")
+    chat_type = chat_info.get("type", "-")
+
+    note_info = f"From {customer_name} (@{username}) via {chat_type} | user_id: {user_id}"
+
     order_id = str(uuid.uuid4())[:8]
     order = Order(
         id=order_id,
-        customer=f"User {user_id}",
+        customer=customer_name,
         phone="-",
         address="From n8n",
-        note="Generated via API",
+        note=note_info,
         status="Menunggu Konfirmasi"
     )
     db.add(order)
 
     for entry in data:
-        menu_id = entry.get("id")
-        qty = entry.get("qty", 1)
-        note = entry.get("notes", "")
+        item = entry.get("json", {})
+        menu_id = item.get("id")
+        qty = item.get("qty", 1)
+        note = item.get("notes", "")
         if menu_id:
-            item = OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=note)
-            db.add(item)
+            db.add(OrderItem(order_id=order_id, menu_id=menu_id, qty=qty, note=note))
 
     db.commit()
     return {"order_id": order_id, "status": "created"}
